@@ -1,49 +1,56 @@
 import cv2
 import os
+import sys
 
 def process_video(video_path):
-    # Initialize video capture
+    if not os.path.exists(video_path):
+        print(f"Error: The file '{video_path}' does not exist.")
+        return
+
     cap = cv2.VideoCapture(video_path)
     
     if not cap.isOpened():
-        print("Error: Could not open video.")
+        print("Error: Could not open video file.")
         return
 
-    # Get the base filename without extension for saving frames
     base_name = os.path.splitext(os.path.basename(video_path))[0]
     frame_count = 0
 
-    print("Controls: [Space] - Next Frame | [Enter] - Save Frame | [Q] - Quit")
+    print(f"--- Processing: {video_path} ---")
+    print("Controls: [Space] Next Frame | [Enter] Save Current Frame | [Q] Quit")
 
     while True:
+        # 1. Capture the next frame
         ret, frame = cap.read()
         
-        # If ret is False, we've reached the end of the video
         if not ret:
             print("End of video reached.")
             break
 
         frame_count += 1
-        window_name = f"Video - Frame {frame_count}"
+        saved_frame = False
         
+        # 2. Stay on this specific frame until the user chooses to move on
         while True:
+            frame_filename = f"{base_name}_{frame_count}.png"
+            if saved_frame:
+                frame = cv2.imread(frame_filename, cv2.IMREAD_COLOR)
             cv2.imshow("Frame Viewer", frame)
             
-            # waitKey(0) pauses execution until a key is pressed
+            # Wait for user input
             key = cv2.waitKey(0) & 0xFF
 
-            # If Space (32) is pressed, break inner loop to get next frame
-            if key == 32:
+            if key == 32: # Space Bar: Advance to next frame
                 break
             
-            # If Enter (13) is pressed, save the frame
-            elif key == 13:
-                filename = f"{base_name}_frame_{frame_count}.png"
-                cv2.imwrite(filename, frame)
-                print(f"Saved: {filename}")
+            elif key == 13: # Enter Key: Save frame but STAY here
+                cv2.imwrite(frame_filename, frame)
+                print(f"Saved: {frame_filename} (Standing by on frame {frame_count}...)")
+                os.system(f'"C:\\Program%20Files\\paint.net\\paintdotnet.exe" {frame_filename}')
+                # Note: We do NOT 'break' here, so the loop repeats for the same frame
             
-            # If 'q' is pressed, exit the entire program
-            elif key == ord('q'):
+            elif key == ord('q'): # Quit
+                print("Exiting...")
                 cap.release()
                 cv2.destroyAllWindows()
                 return
@@ -51,5 +58,8 @@ def process_video(video_path):
     cap.release()
     cv2.destroyAllWindows()
 
-# Usage
-process_video('your_video.mp4')
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python script_name.py <path_to_video>")
+    else:
+        process_video(sys.argv[1])
