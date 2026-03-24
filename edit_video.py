@@ -14,6 +14,17 @@ def process_video(video_path):
         return
 
     base_name = os.path.splitext(os.path.basename(video_path))[0]
+    print(os.path.splitext(os.path.basename(video_path)))
+
+    # Retrieve properties
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+
+    # Define codec and VideoWriter
+    vidout_filename = f"{base_name}_EDIT.mp4"
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    vidout = cv2.VideoWriter(vidout_filename, fourcc, fps, (frame_width, frame_height))
     frame_count = 0
 
     print(f"--- Processing: {video_path} ---")
@@ -38,15 +49,16 @@ def process_video(video_path):
             cv2.imshow("Frame Viewer", frame)
             
             # Wait for user input
-            key = cv2.waitKey(0) & 0xFF
+            key = cv2.waitKey(1) & 0xFF
 
             if key == 32: # Space Bar: Advance to next frame
                 break
             
             elif key == 13: # Enter Key: Save frame but STAY here
                 cv2.imwrite(frame_filename, frame)
+                saved_frame = True
                 print(f"Saved: {frame_filename} (Standing by on frame {frame_count}...)")
-                os.system(f'"C:\\Program%20Files\\paint.net\\paintdotnet.exe" {frame_filename}')
+                os.system(f'"C:\\Program Files\\paint.net\\paintdotnet.exe" {frame_filename}')
                 # Note: We do NOT 'break' here, so the loop repeats for the same frame
             
             elif key == ord('q'): # Quit
@@ -54,6 +66,7 @@ def process_video(video_path):
                 cap.release()
                 cv2.destroyAllWindows()
                 return
+        vidout.write(frame)
 
     cap.release()
     cv2.destroyAllWindows()
